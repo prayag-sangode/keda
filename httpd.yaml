@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpd
+  template:
+    metadata:
+      labels:
+        app: httpd
+    spec:
+      containers:
+      - name: httpd
+        image: httpd:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpd-service
+spec:
+  selector:
+    app: httpd
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+kind: HTTPScaledObject
+apiVersion: http.keda.sh/v1alpha1
+metadata:
+    name: httpd
+spec:
+    hosts:
+        - app1.example.com
+    pathPrefixes:
+        - /
+    scaleTargetRef:
+        name: httpd-deployment
+        kind: Deployment
+        apiVersion: apps/v1
+        service: httpd-service
+        port: 80
+    replicas:
+        min: 0
+        max: 5
+    scaledownPeriod: 300
+    scalingMetric:
+        requestRate:
+            granularity: 1s
+            targetValue: 100
+            window: 1m
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keda-ingress
+  namespace: keda
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx  # Specify the ingress class here
+  rules:
+  - host: app1.example.com  # Replace with your actual hostname
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: keda-add-ons-http-interceptor-proxy
+            port:
+              number: 8080
