@@ -1,0 +1,9 @@
+# Run inside the container
+kube exec -it <container-id> -- /bin/bash
+
+# Install siege
+apt-get update && apt-get -y install stress-ng
+
+# Generate load
+stress-ng --cpu 0 --cpu-load 60 --timeout 60s
+

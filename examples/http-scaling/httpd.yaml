@@ -1,7 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: http-scaling-test
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: httpd-deployment
+  namespace: http-scaling-test
 spec:
   replicas: 1
   selector:
@@ -22,6 +28,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: httpd-service
+  namespace: http-scaling-test
 spec:
   selector:
     app: httpd
@@ -35,6 +42,7 @@ kind: HTTPScaledObject
 apiVersion: http.keda.sh/v1alpha1
 metadata:
     name: httpd
+    namespace: http-scaling-test
 spec:
     hosts:
         - app1.example.com
